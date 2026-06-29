@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generador de Etiquetas desde Excel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/7.0.0/fuse.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+    </script>
+    <style>
+        /* (estilos sin cambios) */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: #f4f7fc;
+            padding: 30px 20px;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            padding: 30px 30px 40px;
+            box-shadow: 0 20px 60px rgba(0, 20, 40, 0.08);
+        }
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #64748b;
+            font-size: 1rem;
+            margin-bottom: 30px;
+            border-left: 4px solid #2563eb;
+            padding-left: 16px;
+        }
+        .upload-area {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #2563eb;
+            background: #f1f5f9;
+        }
+        .upload-area input[type="file"] {
+            display: none;
+        }
+        .upload-label {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            padding: 12px 32px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.15s;
+            border: none;
+        }
+        .upload-label:hover {
+            background: #1d4ed8;
+            transform: scale(1.02);
+        }
+        .file-info {
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: #334155;
+        }
+        .logo-url-area {
+            margin: 10px 0 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            background: #f8fafc;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .logo-url-area label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+        .logo-url-area input {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px 24px;
+            margin: 25px 0 20px;
+            background: #f8fafc;
+            padding: 16px 20px;
+            border-radius: 16px;
+        }
+        .search-box {
+            flex: 2;
+            min-width: 220px;
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 40px;
+            padding: 4px 18px 4px 24px;
+            transition: 0.2s;
+        }
+        .search-box:focus-within {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        .search-box input {
+            border: none;
+            outline: none;
+            background: transparent;
+            padding: 12px 0;
+            font-size: 1rem;
+            width: 100%;
+        }
+        .search-box .icon {
+            color: #94a3b8;
+            font-size: 1.2rem;
+            margin-right: 8px;
+        }
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 24px;
+            font-size: 0.95rem;
+        }
+        .stats span {
+            background: white;
+            padding: 6px 16px;
+            border-radius: 40px;
+            border: 1px solid #e2e8f0;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-left: auto;
+        }
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: scale(1.02);
+        }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #047857;
+            transform: scale(1.02);
+        }
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            margin-top: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        th {
+            background: #f1f5f9;
+            text-align: left;
+            padding: 14px 16px;
+            font-weight: 600;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        tr:hover td {
+            background: #fafcff;
+        }
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+        .checkbox-cell input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #2563eb;
+        }
+        .empty-message {
+            padding: 40px 20px;
+            text-align: center;
+            color: #94a3b8;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 20px 0 8px;
+            flex-wrap: wrap;
+        }
+        .pagination button {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 6px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.15s;
+        }
+        .pagination button:hover:not(:disabled) {
+            background: #f1f5f9;
+        }
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+        .pagination .page-info {
+            padding: 0 12px;
+            font-weight: 500;
+        }
+        .footer-actions {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 24px;
+            flex-wrap: wrap;
+        }
+        @media (max-width: 700px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.6rem;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .btn-group {
+                margin-left: 0;
+                justify-content: center;
+            }
+            .logo-url-area {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏷️ Generador de Etiquetas desde Excel</h1>
+        <div class="subtitle">
+            Sube tu Excel (todas las hojas), busca productos, selecciona y genera PDF con etiquetas.
+            <span style="display:block; margin-top:4px; font-size:0.9rem; color:#475569;">
+                ⚠️ Columnas esperadas (fila 3 = encabezado, fila 4+ = datos):<br>
+                <strong>A=Código, B=Descripción, C=Línea, D=Marca, E=Precio Tienda, I=Precio IVOO APP</strong>
+                <br>El logo se carga desde <strong>logo.png</strong> en la carpeta raíz (si no existe, se muestra un placeholder).
+            </span>
+        </div>
+
+        <!-- Logo URL -->
+        <div class="logo-url-area">
+            <label for="logoUrl">🖼️ Logo (archivo local o URL):</label>
+            <input type="text" id="logoUrl" placeholder="logo.png" value="logo.png" />
+            <span style="font-size:0.8rem; color:#64748b;">(Ej: logo.png, https://...)</span>
+        </div>
+
+        <!-- Área de carga -->
+        <div class="upload-area" id="uploadArea">
+            <div style="margin-bottom: 12px; font-size: 2.5rem;">📂</div>
+            <label class="upload-label" for="fileInput">Seleccionar archivo Excel</label>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" />
+            <div class="file-info" id="fileInfo">Ningún archivo cargado</div>
+        </div>
+
+        <!-- Controles -->
+        <div class="controls" id="controlsSection" style="display: none;">
+            <div class="search-box">
+                <span class="icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Buscar por código o descripción..." />
+            </div>
+            <div class="stats">
+                <span id="totalCount">0 productos</span>
+                <span id="selectedCount">0 seleccionados</span>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" id="selectAllBtn">✔ Seleccionar todos</button>
+                <button class="btn btn-secondary" id="deselectAllBtn">✖ Deseleccionar todos</button>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div id="tableContainer"></div>
+
+        <!-- Paginación -->
+        <div class="pagination" id="paginationControls" style="display: none;">
+            <button id="prevPageBtn" disabled>◀ Anterior</button>
+            <span class="page-info" id="pageInfo">Página 1</span>
+            <button id="nextPageBtn" disabled>Siguiente ▶</button>
+        </div>
+
+        <!-- Acciones -->
+        <div class="footer-actions">
+            <button class="btn btn-success" id="generatePdfBtn" disabled>📄 Generar PDF</button>
+            <button class="btn btn-secondary" id="resetBtn">🔄 Reiniciar</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ===== CONFIGURACIÓN DE COLUMNAS POR ÍNDICE =====
+            const COL_IDX = {
+                codigo: 0, // A
+                descripcion: 1, // B
+                linea: 2, // C
+                marca: 3, // D
+                precioTienda: 4, // E
+                precioIvaApp: 8 // I
+            };
+
+            const HEADER_ROW_INDEX = 2;
+            const DATA_START_ROW = 3;
+
+            // ===== ESTADO =====
+            let allProducts = [];
+            let filteredProducts = [];
+            let selectedSet = new Set();
+            let currentPage = 1;
+            const pageSize = 10;
+
+            // ===== DOM =====
+            const fileInput = document.getElementById('fileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const uploadArea = document.getElementById('uploadArea');
+            const controlsSection = document.getElementById('controlsSection');
+            const searchInput = document.getElementById('searchInput');
+            const totalCount = document.getElementById('totalCount');
+            const selectedCount = document.getElementById('selectedCount');
+            const tableContainer = document.getElementById('tableContainer');
+            const paginationControls = document.getElementById('paginationControls');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+            const pageInfo = document.getElementById('pageInfo');
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            const deselectAllBtn = document.getElementById('deselectAllBtn');
+            const generatePdfBtn = document.getElementById('generatePdfBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const logoUrlInput = document.getElementById('logoUrl');
+
+            // ===== FUNCIONES =====
+            function normalizeText(str) {
+                if (!str) return '';
+                return str.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            }
+
+            function escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe.replace(/[&<>"]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    if (m === '"') return '&quot;';
+                    return m;
+                });
+            }
+
+            function parseExcel(data) {
+                const workbook = XLSX.read(data, { type: 'array' });
+                const allProducts = [];
+                let foundData = false;
+
+                workbook.SheetNames.forEach(sheetName => {
+                    const sheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+                    if (rows.length <= DATA_START_ROW) return;
+
+                    const headerRow = rows[HEADER_ROW_INDEX];
+                    if (!headerRow || headerRow.length < 9) return;
+
+                    for (let i = DATA_START_ROW; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row || row.length < 9) continue;
+
+                        const codigo = String(row[COL_IDX.codigo] || '').trim();
+                        const descripcion = String(row[COL_IDX.descripcion] || '').trim();
+                        if (codigo === '' && descripcion === '') continue;
+
+                        const linea = String(row[COL_IDX.linea] || '').trim();
+                        const marca = String(row[COL_IDX.marca] || '').trim();
+
+                        let precioTienda = parseFloat(row[COL_IDX.precioTienda]);
+                        if (isNaN(precioTienda)) precioTienda = 0;
+
+                        let precioIvaApp = parseFloat(row[COL_IDX.precioIvaApp]);
+                        if (isNaN(precioIvaApp)) precioIvaApp = 0;
+
+                        allProducts.push({
+                            codigo: codigo,
+                            descripcion: descripcion,
+                            linea: linea,
+                            marca: marca,
+                            precioTienda: precioTienda.toFixed(2),
+                            precioIvaApp: precioIvaApp.toFixed(2),
+                            _precioTiendaNum: precioTienda,
+                            _precioIvaAppNum: precioIvaApp
+                        });
+                    }
+                    foundData = true;
+                });
+
+                if (!foundData || allProducts.length === 0) {
+                    alert('No se encontraron datos.\n' +
+                        'Asegúrate de que:\n' +
+                        '- El Excel tenga al menos una hoja con datos.\n' +
+                        '- La fila 3 sea el encabezado.\n' +
+                        '- Los datos comiencen en la fila 4.\n' +
+                        '- Las columnas A, B, E e I tengan datos.');
+                    return [];
+                }
+                return allProducts;
+            }
+
+            // ===== RENDERIZADO =====
+            function renderTable() {
+                const start = (currentPage - 1) * pageSize;
+                const pageItems = filteredProducts.slice(start, start + pageSize);
+
+                if (filteredProducts.length === 0) {
+                    tableContainer.innerHTML =
+                        `<div class="table-wrap"><div class="empty-message">📭 No hay productos para mostrar.</div></div>`;
+                    paginationControls.style.display = 'none';
+                    updateStats();
+                    return;
+                }
+
+                let html = `<div class="table-wrap"><table>
+                            <thead><tr>
+                                <th class="checkbox-cell">#</th>
+                                <th>Código</th>
+                                <th>Descripción</th>
+                                <th>Línea</th>
+                                <th>Marca</th>
+                                <th>Precio Tienda ($)</th>
+                                <th>Precio IVOO APP ($)</th>
+                            </tr></thead><tbody>`;
+
+                pageItems.forEach((product) => {
+                    const realIndex = allProducts.indexOf(product);
+                    const checked = selectedSet.has(realIndex) ? 'checked' : '';
+                    html += `<tr>
+                                <td class="checkbox-cell"><input type="checkbox" class="product-checkbox" data-index="${realIndex}" ${checked}></td>
+                                <td><strong>${escapeHtml(product.codigo)}</strong></td>
+                                <td>${escapeHtml(product.descripcion)}</td>
+                                <td>${escapeHtml(product.linea)}</td>
+                                <td>${escapeHtml(product.marca)}</td>
+                                <td>$ ${escapeHtml(product.precioTienda)}</td>
+                                <td>$ ${escapeHtml(product.precioIvaApp)}</td>
+                            </tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                tableContainer.innerHTML = html;
+
+                document.querySelectorAll('.product-checkbox').forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        const idx = parseInt(this.dataset.index);
+                        if (this.checked) selectedSet.add(idx);
+                        else selectedSet.delete(idx);
+                        updateStats();
+                        updateGenerateButton();
+                    });
+                });
+
+                const totalPages = Math.ceil(filteredProducts.length / pageSize) || 1;
+                pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+                prevPageBtn.disabled = (currentPage <= 1);
+                nextPageBtn.disabled = (currentPage >= totalPages);
+                paginationControls.style.display = 'flex';
+                updateStats();
+            }
+
+            function updateStats() {
+                totalCount.textContent = `${filteredProducts.length} productos (de ${allProducts.length} total)`;
+                selectedCount.textContent = `${selectedSet.size} seleccionados`;
+            }
+
+            function updateGenerateButton() {
+                generatePdfBtn.disabled = (selectedSet.size === 0);
+            }
+
+            // ===== BÚSQUEDA DIFUSA =====
+            let fuseInstance = null;
+
+            function rebuildFuse() {
+                if (allProducts.length === 0) {
+                    fuseInstance = null;
+                    return;
+                }
+                const options = {
+                    keys: ['codigo', 'descripcion'],
+                    threshold: 0.35,
+                    ignoreLocation: true,
+                    minMatchCharLength: 2
+                };
+                fuseInstance = new Fuse(allProducts, options);
+            }
+
+            function applySearch(query) {
+                if (!query || query.trim() === '') {
+                    filteredProducts = [...allProducts];
+                } else {
+                    if (fuseInstance) {
+                        const result = fuseInstance.search(query.trim());
+                        filteredProducts = result.map(r => r.item);
+                    } else {
+                        filteredProducts = [];
+                    }
+                }
+                currentPage = 1;
+                renderTable();
+            }
+
+            // ===== CARGA DEL EXCEL =====
+            function loadExcelFile(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const products = parseExcel(data);
+                        if (products.length === 0) {
+                            alert('No se pudieron cargar productos.');
+                            return;
+                        }
+                        allProducts = products;
+                        selectedSet.clear();
+                        rebuildFuse();
+                        applySearch('');
+                        controlsSection.style.display = 'flex';
+                        fileInfo.textContent = `Archivo cargado: ${file.name} (${allProducts.length} productos)`;
+                        updateGenerateButton();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Error al leer el archivo: ' + err.message);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            // ===== GENERACIÓN DEL PDF con GAP y LOGO (con placeholder) =====
+            function generatePdf() {
+                if (selectedSet.size === 0) {
+                    alert('No hay productos seleccionados.');
+                    return;
+                }
+
+                const selectedProducts = [];
+                allProducts.forEach((p, idx) => {
+                    if (selectedSet.has(idx)) selectedProducts.push(p);
+                });
+                if (selectedProducts.length === 0) return;
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('landscape', 'mm', 'a4');
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+
+                const cols = 3;
+                const rows = 4;
+                const gap = 3; // mm entre etiquetas
+
+                const totalGapX = (cols - 1) * gap;
+                const totalGapY = (rows - 1) * gap;
+                const usableWidth = pageWidth - 20 - totalGapX;
+                const usableHeight = pageHeight - 20 - totalGapY;
+                const labelWidth = usableWidth / cols;
+                const labelHeight = usableHeight / rows;
+
+                const marginX = 10;
+                const marginY = 10;
+                const padding = 5;
+
+                let logoUrl = logoUrlInput.value.trim() || 'logo.png';
+
+                function getImageData(url) {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.crossOrigin = 'Anonymous';
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            resolve(canvas.toDataURL('image/png'));
+                        };
+                        img.onerror = function() { resolve(null); };
+                        img.src = url;
+                    });
+                }
+
+                let logoBase64 = null;
+
+                async function generate() {
+                    logoBase64 = await getImageData(logoUrl);
+
+                    let currentIndex = 0;
+
+                    function drawLabel(x, y, product) {
+                        // Borde de la etiqueta
+                        doc.setDrawColor(0);
+                        doc.setLineWidth(0.4);
+                        doc.rect(x, y, labelWidth, labelHeight);
+
+                        // ---- LOGO (esquina superior derecha con placeholder) ----
+                        const logoSize = 12;
+                        const logoX = x + labelWidth - padding - logoSize;
+                        const logoY = y + padding;
+
+                        if (logoBase64) {
+                            try {
+                                doc.addImage(logoBase64, 'PNG', logoX, logoY, logoSize, logoSize * 0.6);
+                            } catch (e) {
+                                // fallback si falla addImage
+                                doc.setFillColor(200, 200, 200);
+                                doc.rect(logoX, logoY, logoSize, logoSize * 0.6, 'F');
+                                doc.setTextColor(0);
+                                doc.setFontSize(6);
+                                doc.text('LOGO', logoX + 2, logoY + 4);
+                            }
+                        } else {
+                            // Placeholder cuando no hay imagen
+                            doc.setFillColor(200, 200, 200);
+                            doc.rect(logoX, logoY, logoSize, logoSize * 0.6, 'F');
+                            doc.setTextColor(0);
+                            doc.setFontSize(6);
+                            doc.text('LOGO', logoX + 2, logoY + 4);
+                        }
+
+                        // ---- Código (izquierda) ----
+                        doc.setTextColor(0);
+                        doc.setFontSize(12);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(product.codigo, x + padding, y + padding + 4);
+
+                        // ---- Descripción (centro) ----
+                        const descY = y + padding + 10;
+                        doc.setFontSize(14);
+                        doc.setFont('helvetica', 'bold');
+                        const descLines = doc.splitTextToSize(product.descripcion, labelWidth - padding * 2);
+                        const maxDescLines = 2;
+                        const descToShow = descLines.slice(0, maxDescLines);
+                        doc.text(descToShow, x + labelWidth / 2, descY + 4, { align: 'center' });
+
+                        // ---- Línea separadora ----
+                        const lineY = descY + (descToShow.length * 6) + 6;
+                        if (lineY < y + labelHeight - 16) {
+                            doc.setDrawColor(0);
+                            doc.setLineWidth(0.2);
+                            doc.line(x + padding, lineY, x + labelWidth - padding, lineY);
+                        }
+
+                        // ---- Títulos de precios ----
+                        const priceRowY = y + labelHeight - padding - 12;
+                        doc.setFontSize(9);
+                        doc.setFont('helvetica', 'bold');
+
+                        const leftX = x + padding;
+                        doc.text('PRECIO IVOO APP', leftX, priceRowY);
+
+                        const rightX = x + labelWidth / 2 + padding;
+                        doc.text('PRECIO TIENDA', rightX, priceRowY);
+
+                        // ---- Valores de precios ----
+                        const priceValY = priceRowY + 6;
+                        doc.setFontSize(12);
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(200, 0, 0);
+
+                        doc.text(`$ ${product.precioIvaApp}`, leftX, priceValY);
+                        doc.text(`$ ${product.precioTienda}`, rightX, priceValY);
+                    }
+
+                    while (currentIndex < selectedProducts.length) {
+                        if (currentIndex > 0 && currentIndex % (cols * rows) === 0) {
+                            doc.addPage();
+                        }
+                        const offset = currentIndex % (cols * rows);
+                        const row = Math.floor(offset / cols);
+                        const col = offset % cols;
+                        const x = marginX + col * (labelWidth + gap);
+                        const y = marginY + row * (labelHeight + gap);
+                        drawLabel(x, y, selectedProducts[currentIndex]);
+                        currentIndex++;
+                    }
+
+                    doc.save('etiquetas_seleccionadas.pdf');
+                }
+
+                generate().catch(err => {
+                    console.error(err);
+                    alert('Error al generar el PDF: ' + err.message);
+                });
+            }
+
+            // ===== EVENTOS =====
+            fileInput.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    loadExcelFile(this.files[0]);
+                }
+            });
+
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.borderColor = '#2563eb';
+                this.style.background = '#f1f5f9';
+            });
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.borderColor = '#cbd5e1';
+                this.style.background = '#f8fafc';
+            });
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.borderColor = '#cbd5e1';
+                this.style.background = '#f8fafc';
+                const files = e.dataTransfer.files;
+                if (files && files[0]) {
+                    fileInput.files = files;
+                    loadExcelFile(files[0]);
+                }
+            });
+
+            searchInput.addEventListener('input', function() {
+                applySearch(this.value);
+            });
+
+            prevPageBtn.addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            });
+            nextPageBtn.addEventListener('click', function() {
+                const totalPages = Math.ceil(filteredProducts.length / pageSize);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTable();
+                }
+            });
+
+            selectAllBtn.addEventListener('click', function() {
+                const start = (currentPage - 1) * pageSize;
+                const pageItems = filteredProducts.slice(start, start + pageSize);
+                pageItems.forEach(p => {
+                    const idx = allProducts.indexOf(p);
+                    if (idx !== -1) selectedSet.add(idx);
+                });
+                renderTable();
+                updateGenerateButton();
+            });
+
+            deselectAllBtn.addEventListener('click', function() {
+                const start = (currentPage - 1) * pageSize;
+                const pageItems = filteredProducts.slice(start, start + pageSize);
+                pageItems.forEach(p => {
+                    const idx = allProducts.indexOf(p);
+                    if (idx !== -1) selectedSet.delete(idx);
+                });
+                renderTable();
+                updateGenerateButton();
+            });
+
+            generatePdfBtn.addEventListener('click', generatePdf);
+
+            resetBtn.addEventListener('click', function() {
+                allProducts = [];
+                filteredProducts = [];
+                selectedSet.clear();
+                fuseInstance = null;
+                fileInput.value = '';
+                fileInfo.textContent = 'Ningún archivo cargado';
+                controlsSection.style.display = 'none';
+                tableContainer.innerHTML = '';
+                paginationControls.style.display = 'none';
+                updateStats();
+                updateGenerateButton();
+                searchInput.value = '';
+            });
+
+            // ===== INICIO =====
+            updateStats();
+            updateGenerateButton();
+        })();
+    </script>
+</body>
+</html>
