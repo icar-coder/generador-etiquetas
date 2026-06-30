@@ -677,12 +677,13 @@
 
                         // ---- LOGO (esquina superior derecha con placeholder) ----
                         const logoSize = 12;
-                        const logoX = x + labelWidth - padding - logoSize + 20;
+                        const logoSizealto =16;
+                        const logoX = x + labelWidth - padding - logoSize;
                         const logoY = y + padding;
 
                         if (logoBase64) {
                             try {
-                                doc.addImage(logoBase64, 'PNG', logoX, logoY, logoSize, logoSize * 0.6);
+                                doc.addImage(logoBase64, 'PNG', logoX, logoY, logoSize, logoSizealto * 0.6);
                             } catch (e) {
                                 // fallback si falla addImage
                                 doc.setFillColor(200, 200, 200);
