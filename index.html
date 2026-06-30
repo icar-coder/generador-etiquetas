@@ -683,7 +683,7 @@
 
                         if (logoBase64) {
                             try {
-                                doc.addImage(logoBase64, 'PNG', logoX, logoY, logoSize, logoSizealto * 0.6);
+                                doc.addImage(logoBase64, 'PNG', logoX, logoY, logoSizealto, logoSize * 0.6);
                             } catch (e) {
                                 // fallback si falla addImage
                                 doc.setFillColor(200, 200, 200);
